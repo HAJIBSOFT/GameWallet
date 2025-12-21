@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GameZone Wallet</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  
+  <style>
+    /* نفس التصميم السابق تماماً */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap');
+    :root { --primary: #6C63FF; --primary-hover: #5a52d5; --bg: #121212; --card-bg: rgba(30, 30, 40, 0.6); --text: #ffffff; --success: #00E676; --danger: #FF5252; --glass-border: rgba(255, 255, 255, 0.1); }
+    body { font-family: 'Cairo', sans-serif; background-color: var(--bg); background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%); color: var(--text); margin: 0; padding: 20px 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    .container { width: 90%; max-width: 400px; margin: 0 auto; }
+    .card { background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); margin-bottom: 20px; animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    h2, h3 { text-align: center; margin-top: 0; font-weight: 700; } h2 { color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem; } h3 { font-size: 1.2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
+    input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.3); color: #fff; font-family: 'Cairo', sans-serif; box-sizing: border-box; font-size: 1rem; transition: 0.3s; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(108, 99, 255, 0.3); }
+    button { width: 100%; padding: 14px; margin-top: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; font-family: 'Cairo', sans-serif; transition: 0.3s; box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4); }
+    button:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .btn-danger { background: var(--danger); box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4); } .btn-danger:hover { background: #ff3b3b; }
+    .btn-outline { background: transparent; border: 1px solid var(--glass-border); box-shadow: none; } .btn-outline:hover { background: rgba(255,255,255,0.1); }
+    .logo-container { text-align: center; margin-bottom: 20px; font-size: 4rem; text-shadow: 0 0 20px rgba(108, 99, 255, 0.5); }
+    .balance-card { background: linear-gradient(135deg, #6C63FF 0%, #4834d4 100%); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(72, 52, 212, 0.5); }
+    .balance-label { font-size: 0.9rem; opacity: 0.9; } .balance-amount { font-size: 2.8rem; font-weight: 700; margin: 5px 0; }
+    #qrcode { background: white; padding: 15px; border-radius: 15px; width: fit-content; margin: 10px auto; }
+    .history-list { max-height: 250px; overflow-y: auto; margin-top: 10px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem; }
+    .history-amount { font-weight: bold; } .amount-plus { color: var(--success); } .amount-minus { color: var(--danger); } .history-date { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+    .tab-btn { padding: 8px 15px; background: rgba(255,255,255,0.05); border-radius: 20px; font-size: 0.85rem; white-space: nowrap; margin-top: 0; box-shadow: none; } .tab-btn.active { background: var(--primary); }
+    .report-result { margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; text-align: center; } .report-val { font-size: 1.2rem; font-weight: bold; margin: 5px 0; } .report-label { font-size: 0.8rem; color: #bbb; }
+    #reader { width: 100%; border-radius: 15px; overflow: hidden; margin-bottom: 15px; border: 2px solid var(--primary); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-container">🕹️</div>
+
+  <!-- Login -->
+  <div id="login-screen" class="card">
+    <h2>تسجيل الدخول</h2>
+    <input type="email" id="login-email" placeholder="البريد الإلكتروني">
+    <input type="password" id="login-pass" placeholder="كلمة المرور">
+    <button onclick="handleLogin()">دخول</button>
+  </div>
+
+  <!-- User Interface -->
+  <div id="user-screen" class="card hidden">
+    <div class="balance-card">
+      <div class="balance-label">رصيدك الحالي</div>
+      <div class="balance-amount"><span id="user-balance-disp">0</span></div>
+      <div class="balance-label">ريال</div>
+    </div>
+    <div style="text-align: center; margin-bottom: 10px; font-size: 0.9rem; color: #ccc;">امسح الباركود عند المشغل</div>
+    <div id="qrcode"></div>
+    <h3 style="margin-top: 25px;">سجل العمليات</h3>
+    <div id="user-history" class="history-list"></div>
+    <button class="btn-outline" onclick="loadUserDashboard()">🔄 تحديث البيانات</button>
+    <button class="btn-danger" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- Admin Interface -->
+  <div id="admin-screen" class="card hidden">
+    <h2>لوحة التحكم</h2>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showAdminTab('tab-topup')">شحن رصيد</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-users')">إضافة مستخدم</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-reports')">التقارير</button>
+    </div>
+    <div id="tab-topup">
+      <h3 style="border:none; text-align:right;">شحن رصيد عميل</h3>
+      <input type="email" id="admin-topup-email" placeholder="بريد العميل">
+      <input type="number" id="admin-topup-amount" placeholder="المبلغ">
+      <button onclick="handleTransaction('deposit')">💰 شحن الرصيد</button>
+    </div>
+    <div id="tab-users" class="hidden">
+      <h3 style="border:none; text-align:right;">مستخدم جديد</h3>
+      <input type="email" id="new-email" placeholder="البريد الإلكتروني">
+      <input type="password" id="new-pass" placeholder="كلمة المرور">
+      <input type="text" id="new-name" placeholder="الاسم الكامل">
+      <select id="new-role">
+        <option value="user">مستخدم (عميل)</option>
+        <option value="operator">مشغل ألعاب</option>
+        <option value="admin">مدير</option>
+      </select>
+      <button onclick="createNewUser()">➕ إنشاء حساب</button>
+    </div>
+    <div id="tab-reports" class="hidden">
+      <h3 style="border:none; text-align:right;">التقرير المالي</h3>
+      <label style="font-size:0.8rem">من تاريخ:</label> <input type="date" id="report-start">
+      <label style="font-size:0.8rem">إلى تاريخ:</label> <input type="date" id="report-end">
+      <button onclick="generateReport()">📄 استخراج التقرير</button>
+      <div id="report-output" class="hidden">
+        <div class="report-result">
+          <div class="report-label">إجمالي الشحن</div> <div class="report-val" style="color:var(--success)" id="rep-deposit">0</div>
+          <hr style="border-color:rgba(255,255,255,0.1)">
+          <div class="report-label">إجمالي المصروفات</div> <div class="report-val" style="color:var(--danger)" id="rep-spent">0</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-danger" style="margin-top:20px" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- Operator Interface -->
+  <div id="operator-screen" class="card hidden">
+    <h2>مشغل الألعاب</h2>
+    <div style="text-align:center; margin-bottom:10px;">امسح باركود العميل</div>
+    <div id="reader"></div>
+    <div id="scan-result" style="text-align:center; color: var(--success); font-weight:bold; margin-bottom:10px;"></div>
+    <input type="email" id="op-user-email" placeholder="بريد العميل (أو امسح الكود)">
+    <input type="number" id="op-amount" placeholder="سعر اللعبة">
+    <button onclick="handleTransaction('withdraw')">🎮 خصم وبدء اللعب</button>
+    <button class="btn-outline" onclick="startScanner()">📷 فتح الكاميرا</button>
+    <button class="btn-danger" onclick="logout()">خروج</button>
+  </div>
+
+</div>
+
+<script>
+  /* ============= الرابط المهم ============= */
+  // ضع رابط الـ Web App الذي نسخته من جوجل سكربت هنا
+  const API_URL = "https://script.google.com/macros/s/AKfycbx9KgDHz_OJfQT-gBs3kjluyOc_ACMmoPfg9Af7VsEClYTb43wPMIDGBEgPKZdMvLEuPw/exec"; 
+  /* ======================================== */
+
+  let currentUser = {};
+  let html5QrcodeScanner = null;
+
+  // دالة الاتصال بالسكربت (بديل google.script.run)
+  async function apiCall(data) {
+    try {
+      // نرسل البيانات كـ نص عادي لتجنب مشاكل CORS
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error(error);
+      Swal.fire('خطأ في الاتصال', 'تأكد من الانترنت أو الرابط', 'error');
+      return { success: false };
+    }
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    if (!email || !pass) return Swal.fire('تنبيه', 'يرجى ملء جميع الحقول', 'warning');
+    
+    Swal.fire({title: 'جاري الدخول...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
+    const res = await apiCall({ action: 'login', email: email, password: pass });
+    Swal.close();
+
+    if (res.success) {
+      currentUser = res;
+      document.getElementById('login-screen').classList.add('hidden');
+      if (res.role === 'admin') document.getElementById('admin-screen').classList.remove('hidden');
+      else if (res.role === 'operator') document.getElementById('operator-screen').classList.remove('hidden');
+      else { document.getElementById('user-screen').classList.remove('hidden'); loadUserDashboard(); }
+    } else {
+      Swal.fire('خطأ', res.message, 'error');
+    }
+  }
+
+  function logout() { location.reload(); }
+
+  async function loadUserDashboard() {
+    document.getElementById('qrcode').innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), { text: currentUser.email, width: 150, height: 150 });
+    
+    const balanceRes = await apiCall({ action: 'getUserDetails', email: currentUser.email });
+    if(balanceRes.success) document.getElementById('user-balance-disp').innerText = balanceRes.balance;
+
+    const historyRes = await apiCall({ action: 'getUserHistory', email: currentUser.email });
+    updateUserHistory(historyRes.history || []);
+  }
+
+  function updateUserHistory(history) {
+    const container = document.getElementById('user-history');
+    container.innerHTML = "";
+    if (history.length === 0) { container.innerHTML = "<div style='text-align:center; padding:10px; color:#aaa'>لا توجد عمليات</div>"; return; }
+    history.forEach(item => {
+      const isDeposit = item.type === "شحن رصيد";
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `<div><div>${item.type}</div><div class="history-date">${item.date}</div></div><div class="history-amount ${isDeposit ? 'amount-plus' : 'amount-minus'}">${isDeposit ? '+' : '-'}${item.amount}</div>`;
+      container.appendChild(div);
+    });
+  }
+
+  function showAdminTab(tabId) {
+    document.getElementById('tab-topup').classList.add('hidden'); document.getElementById('tab-users').classList.add('hidden'); document.getElementById('tab-reports').classList.add('hidden');
+    document.getElementById(tabId).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active');
+  }
+
+  async function createNewUser() {
+    const email = document.getElementById('new-email').value;
+    const pass = document.getElementById('new-pass').value;
+    const name = document.getElementById('new-name').value;
+    const role = document.getElementById('new-role').value;
+    if(!email || !pass || !name) return Swal.fire('نقص بيانات', 'املأ جميع الحقول', 'warning');
+    
+    Swal.showLoading();
+    const res = await apiCall({ action: 'createNewUser', email, password: pass, name, role });
+    Swal.close();
+    if(res.success) { Swal.fire('تم', res.message, 'success'); document.getElementById('new-email').value = ""; }
+    else Swal.fire('خطأ', res.message, 'error');
+  }
+
+  async function generateReport() {
+    const start = document.getElementById('report-start').value;
+    const end = document.getElementById('report-end').value;
+    if(!start || !end) return Swal.fire('تنبيه', 'حدد التواريخ', 'warning');
+    
+    Swal.showLoading();
+    const res = await apiCall({ action: 'getAdminReport', startDate: start, endDate: end });
+    Swal.close();
+    if(res.success) {
+      document.getElementById('report-output').classList.remove('hidden');
+      document.getElementById('rep-deposit').innerText = res.deposit + " ريال";
+      document.getElementById('rep-spent').innerText = res.spent + " ريال";
+    }
+  }
+
+  async function handleTransaction(type) {
+    let emailField = type === 'deposit' ? 'admin-topup-email' : 'op-user-email';
+    let amountField = type === 'deposit' ? 'admin-topup-amount' : 'op-amount';
+    const email = document.getElementById(emailField).value;
+    const amount = document.getElementById(amountField).value;
+    if(!email || !amount) return Swal.fire('تنبيه', 'أدخل البريد والمبلغ', 'warning');
+
+    Swal.showLoading();
+    const res = await apiCall({ action: 'transaction', userEmail: email, amount, type, operatorEmail: currentUser.email });
+    Swal.close();
+    if(res.success) {
+      Swal.fire('نجاح', res.message, 'success');
+      document.getElementById(emailField).value = ""; document.getElementById(amountField).value = "";
+      if(type === 'withdraw') document.getElementById('scan-result').innerText = "";
+    } else Swal.fire('فشل', res.message, 'error');
+  }
+
+  function startScanner() {
+    const readerDiv = document.getElementById('reader');
+    if(!html5QrcodeScanner) {
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+      html5QrcodeScanner.render((decodedText) => {
+        document.getElementById('op-user-email').value = decodedText;
+        document.getElementById('scan-result').innerText = "تم مسح العميل: " + decodedText;
+        html5QrcodeScanner.clear(); html5QrcodeScanner = null; document.getElementById('reader').innerHTML = "";
+      });
+    }
+  }
+</script>
+</body>
+</html>
