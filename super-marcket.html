@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GreenMarket Pay</title>
+  <title>HAJIB Pay</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -179,12 +179,13 @@
 
 <div class="container">
   <div class="logo-header">🛒</div>
-  <div class="app-name">سوبر ماركت باي</div>
+  <div class="app-name">HAJIB PAY</div>
 
   <!-- شاشة الدخول -->
   <div id="login-screen" class="card">
     <h2>تسجيل الدخول</h2>
-    <p style="text-align:center; color:#636e72; font-size:0.9rem;">أهلاً بك في نظام الولاء والدفع</p>
+    <p style="text-align:center; color:#636e72; font-size:0.9rem;">نظام الدفع الالكتروني</p>
+	 <p style="text-align:center; color:#636e72; font-size:0.9rem;">By:Mohmmed Rassam 2026</p>
     <input type="email" id="login-email" placeholder="البريد الإلكتروني">
     <input type="password" id="login-pass" placeholder="كلمة المرور">
     <button onclick="handleLogin()">تسجيل الدخول</button>
@@ -194,8 +195,8 @@
   <div id="user-screen" class="card hidden">
     <div class="wallet-card">
       <div style="font-size: 0.9rem; opacity: 0.9;">رصيد التسوق</div>
-      <div class="balance-amount"><span id="user-balance-disp">0</span> SAR</div>
-      <div style="font-size: 0.8rem;">رقم العميل: <span id="user-id-disp"></span></div>
+      <div class="balance-amount"><span id="user-balance-disp">--</span> SAR</div>
+      <div style="font-size: 0.8rem;">اسم العميل: <span id="user-id-disp"></span></div>
     </div>
 
     <div style="text-align: center;">
