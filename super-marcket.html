@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GreenMarket Pay</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+
+    :root {
+      --primary: #00b894; /* أخضر زمردي */
+      --primary-dark: #00997b;
+      --accent: #fdcb6e; /* أصفر برتقالي */
+      --bg: #f1f2f6;
+      --card-bg: #ffffff;
+      --text: #2d3436;
+      --gray: #dfe6e9;
+      --danger: #ff7675;
+    }
+
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    /* تصميم البطاقة يشبه الفاتورة أو بطاقة العضوية */
+    .card {
+      background: var(--card-bg);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      border-top: 5px solid var(--primary);
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2, h3 { text-align: center; margin: 0 0 15px 0; color: var(--text); }
+    h2 { font-weight: 700; color: var(--primary-dark); }
+    
+    .logo-header {
+      text-align: center;
+      font-size: 3rem;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+    .app-name {
+      text-align: center;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+
+    /* حقول الإدخال */
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 2px solid var(--gray);
+      background: #fdfdfd;
+      font-family: 'Tajawal', sans-serif;
+      box-sizing: border-box;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    /* الأزرار */
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'Tajawal', sans-serif;
+      box-shadow: 0 4px 6px rgba(0, 184, 148, 0.2);
+      transition: 0.2s;
+    }
+    button:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    
+    .btn-danger { background: var(--danger); box-shadow: 0 4px 6px rgba(255, 118, 117, 0.2); }
+    .btn-secondary { background: #636e72; box-shadow: none; }
+    .btn-scan { background: var(--accent); color: #2d3436; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+    /* بطاقة الرصيد */
+    .wallet-card {
+      background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 20px rgba(0, 184, 148, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .wallet-card::before {
+      content: "🛒";
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      font-size: 6rem;
+      opacity: 0.1;
+      transform: rotate(-15deg);
+    }
+    .balance-amount { font-size: 2.5rem; font-weight: bold; margin: 5px 0; }
+
+    /* الباركود */
+    #qrcode {
+      background: white;
+      padding: 10px;
+      border: 2px dashed var(--gray);
+      border-radius: 10px;
+      width: fit-content;
+      margin: 10px auto;
+    }
+
+    /* السجل */
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid var(--gray);
+      font-size: 0.9rem;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .amount-plus { color: var(--primary); font-weight: bold; }
+    .amount-minus { color: var(--danger); font-weight: bold; }
+
+    /* الكاميرا */
+    #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; border: 2px solid var(--primary); }
+    
+    /* التبويبات */
+    .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid var(--gray); padding-bottom: 5px; }
+    .tab-btn { background: transparent; color: var(--text); border-radius: 5px; padding: 8px 10px; font-size: 0.9rem; margin: 0; box-shadow: none; }
+    .tab-btn.active { background: var(--primary); color: white; }
+
+    .hidden { display: none !important; }
+    
+    /* مساعدة */
+    .input-group { display: flex; gap: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-header">🛒</div>
+  <div class="app-name">سوبر ماركت باي</div>
+
+  <!-- شاشة الدخول -->
+  <div id="login-screen" class="card">
+    <h2>تسجيل الدخول</h2>
+    <p style="text-align:center; color:#636e72; font-size:0.9rem;">أهلاً بك في نظام الولاء والدفع</p>
+    <input type="email" id="login-email" placeholder="البريد الإلكتروني">
+    <input type="password" id="login-pass" placeholder="كلمة المرور">
+    <button onclick="handleLogin()">تسجيل الدخول</button>
+  </div>
+
+  <!-- واجهة العميل (المحفظة) -->
+  <div id="user-screen" class="card hidden">
+    <div class="wallet-card">
+      <div style="font-size: 0.9rem; opacity: 0.9;">رصيد التسوق</div>
+      <div class="balance-amount"><span id="user-balance-disp">0</span> SAR</div>
+      <div style="font-size: 0.8rem;">رقم العميل: <span id="user-id-disp"></span></div>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="font-size: 0.85rem; color: #636e72; margin-bottom:5px;">أظهر الباركود للكاشير للدفع</div>
+      <div id="qrcode"></div>
+    </div>
+
+    <h3 style="margin-top: 25px; border-bottom: 2px solid var(--gray); padding-bottom:10px;">فواتيرك السابقة</h3>
+    <div id="user-history" style="max-height: 200px; overflow-y: auto;"></div>
+
+    <button class="btn-secondary" onclick="loadUserDashboard()">🔄 تحديث الرصيد</button>
+    <button class="btn-danger" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- واجهة الإدارة (خدمة العملاء) -->
+  <div id="admin-screen" class="card hidden">
+    <h2>الإدارة / خدمة العملاء</h2>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showAdminTab('tab-topup')">شحن رصيد</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-users')">عميل جديد</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-reports')">التقارير</button>
+    </div>
+
+    <!-- تبويب الشحن -->
+    <div id="tab-topup">
+      <div id="admin-reader" class="hidden"></div> <!-- مكان الكاميرا للمدير -->
+      
+      <label>بيانات العميل:</label>
+      <div class="input-group">
+        <input type="email" id="admin-topup-email" placeholder="بريد العميل">
+        <button class="btn-scan" style="width: 60px; margin: 8px 0;" onclick="startScanner('admin-topup-email', 'admin-reader')">📷</button>
+      </div>
+      
+      <input type="number" id="admin-topup-amount" placeholder="المبلغ المراد شحنه">
+      <button onclick="handleTransaction('deposit')">💳 إيداع الرصيد</button>
+    </div>
+
+    <!-- تبويب إضافة عميل -->
+    <div id="tab-users" class="hidden">
+      <input type="email" id="new-email" placeholder="البريد الإلكتروني">
+      <input type="password" id="new-pass" placeholder="كلمة المرور">
+      <input type="text" id="new-name" placeholder="اسم العميل">
+      <select id="new-role">
+        <option value="user">عميل (زبون)</option>
+        <option value="operator">كاشير (بائع)</option>
+        <option value="admin">مدير</option>
+      </select>
+      <button onclick="createNewUser()">➕ تسجيل عميل</button>
+    </div>
+
+    <!-- تبويب التقارير -->
+    <div id="tab-reports" class="hidden">
+      <label>من:</label> <input type="date" id="report-start">
+      <label>إلى:</label> <input type="date" id="report-end">
+      <button onclick="generateReport()">📄 تقرير المبيعات</button>
+      <div id="report-output" class="hidden" style="margin-top:10px; background:#f9f9f9; padding:10px; border-radius:8px; text-align:center;">
+        <div style="color:var(--primary); font-weight:bold;">الإيداعات: <span id="rep-deposit">0</span></div>
+        <div style="color:var(--danger); font-weight:bold;">المبيعات: <span id="rep-spent">0</span></div>
+      </div>
+    </div>
+
+    <button class="btn-danger" style="margin-top:20px" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- واجهة الكاشير (البائع) -->
+  <div id="operator-screen" class="card hidden">
+    <h2>نقطة البيع (Cashier)</h2>
+    
+    <div id="cashier-reader"></div> <!-- مكان الكاميرا للكاشير -->
+    <div id="scan-result" style="text-align:center; color: var(--primary); font-weight:bold; margin-bottom:5px;"></div>
+
+    <div class="input-group">
+        <input type="email" id="op-user-email" placeholder="امسح بطاقة العميل">
+        <button class="btn-scan" style="width: 60px; margin: 8px 0;" onclick="startScanner('op-user-email', 'cashier-reader')">📷</button>
+    </div>
+
+    <input type="number" id="op-amount" placeholder="قيمة الفاتورة" style="font-size:1.2rem; font-weight:bold;">
+    
+    <button onclick="handleTransaction('withdraw')" style="background-color: #2d3436;">💰 خصم وإنهاء الفاتورة</button>
+    <button class="btn-danger" onclick="logout()">خروج</button>
+  </div>
+
+</div>
+
+<script>
+  /* ============= الإعدادات ============= */
+  // استبدل هذا الرابط برابط الـ Web App الخاص بك من الخطوات السابقة
+  const API_URL = "https://script.google.com/macros/s/AKfycbx9KgDHz_OJfQT-gBs3kjluyOc_ACMmoPfg9Af7VsEClYTb43wPMIDGBEgPKZdMvLEuPw/exec"; 
+  /* ===================================== */
+
+  let currentUser = {};
+  let scannerObj = null; // متغير لتخزين السكانر النشط
+
+  // دالة الاتصال الموحدة
+  async function apiCall(data) {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+      return { success: false };
+    }
+  }
+
+  // تسجيل الدخول
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    if (!email || !pass) return Swal.fire('تنبيه', 'أدخل البيانات', 'warning');
+    
+    Swal.fire({title: 'جاري التحقق...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    const res = await apiCall({ action: 'login', email: email, password: pass });
+    Swal.close();
+
+    if (res.success) {
+      currentUser = res;
+      document.getElementById('login-screen').classList.add('hidden');
+      if (res.role === 'admin') document.getElementById('admin-screen').classList.remove('hidden');
+      else if (res.role === 'operator') {
+         document.getElementById('operator-screen').classList.remove('hidden');
+         startScanner('op-user-email', 'cashier-reader'); // تشغيل الكاميرا تلقائياً للكاشير
+      }
+      else { 
+        document.getElementById('user-screen').classList.remove('hidden'); 
+        loadUserDashboard(); 
+      }
+    } else {
+      Swal.fire('خطأ', 'بيانات الدخول غير صحيحة', 'error');
+    }
+  }
+
+  function logout() { location.reload(); }
+
+  // لوحة المستخدم
+  async function loadUserDashboard() {
+    document.getElementById('user-id-disp').innerText = currentUser.name;
+    document.getElementById('qrcode').innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), { text: currentUser.email, width: 120, height: 120 });
+    
+    const bal = await apiCall({ action: 'getUserDetails', email: currentUser.email });
+    if(bal.success) document.getElementById('user-balance-disp').innerText = bal.balance;
+
+    const hist = await apiCall({ action: 'getUserHistory', email: currentUser.email });
+    const list = document.getElementById('user-history');
+    list.innerHTML = "";
+    (hist.history || []).forEach(item => {
+      const isDep = item.type === "شحن رصيد";
+      list.innerHTML += `
+        <div class="history-item">
+          <div><div style="font-weight:bold">${isDep ? 'شحن رصيد' : 'مشتريات'}</div><div style="font-size:0.7rem; color:#888">${item.date}</div></div>
+          <div class="${isDep ? 'amount-plus' : 'amount-minus'}">${isDep ? '+' : '-'}${item.amount}</div>
+        </div>`;
+    });
+  }
+
+  // إدارة التبويبات
+  function showAdminTab(id) {
+    ['tab-topup', 'tab-users', 'tab-reports'].forEach(t => document.getElementById(t).classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // إغلاق أي كاميرا مفتوحة عند تغيير التبويب
+    if(scannerObj) { scannerObj.clear(); scannerObj = null; document.getElementById('admin-reader').innerHTML = ""; }
+  }
+
+  // تنفيذ العمليات (شحن أو بيع)
+  async function handleTransaction(type) {
+    let emailId = type === 'deposit' ? 'admin-topup-email' : 'op-user-email';
+    let amountId = type === 'deposit' ? 'admin-topup-amount' : 'op-amount';
+    
+    const email = document.getElementById(emailId).value;
+    const amount = document.getElementById(amountId).value;
+
+    if(!email || !amount) return Swal.fire('تنبيه', 'تأكد من قراءة الباركود والمبلغ', 'warning');
+
+    Swal.fire({title: 'جاري التنفيذ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    const res = await apiCall({ action: 'transaction', userEmail: email, amount, type, operatorEmail: currentUser.email });
+    Swal.close();
+
+    if(res.success) {
+      Swal.fire('تم بنجاح', res.message, 'success');
+      document.getElementById(amountId).value = ""; 
+      document.getElementById(emailId).value = ""; // تصفير الحقل لتجهيز الزبون التالي
+      document.getElementById('scan-result').innerText = "";
+      
+      // إذا كنا في واجهة الكاشير، نعيد تشغيل السكانر للزبون التالي
+      if(type === 'withdraw' && !scannerObj) {
+        startScanner('op-user-email', 'cashier-reader');
+      }
+    } else {
+      Swal.fire('فشل', res.message, 'error');
+    }
+  }
+
+  // إنشاء مستخدم
+  async function createNewUser() {
+    const data = {
+      action: 'createNewUser',
+      email: document.getElementById('new-email').value,
+      password: document.getElementById('new-pass').value,
+      name: document.getElementById('new-name').value,
+      role: document.getElementById('new-role').value
+    };
+    if(!data.email || !data.password) return;
+    
+    Swal.showLoading();
+    const res = await apiCall(data);
+    Swal.close();
+    if(res.success) { Swal.fire('تم', 'تم تسجيل العميل', 'success'); document.getElementById('new-email').value=""; }
+  }
+
+  // التقارير
+  async function generateReport() {
+    const s = document.getElementById('report-start').value;
+    const e = document.getElementById('report-end').value;
+    if(!s || !e) return;
+    Swal.showLoading();
+    const res = await apiCall({ action: 'getAdminReport', startDate: s, endDate: e });
+    Swal.close();
+    if(res.success) {
+      document.getElementById('report-output').classList.remove('hidden');
+      document.getElementById('rep-deposit').innerText = res.deposit;
+      document.getElementById('rep-spent').innerText = res.spent;
+    }
+  }
+
+  /* --- نظام الكاميرا (الباركود) الموحد --- */
+  // هذه الدالة تعمل للمدير وللكاشير
+  function startScanner(inputId, divId) {
+    const readerDiv = document.getElementById(divId);
+    readerDiv.classList.remove('hidden');
+    
+    // إذا كان هناك سكانر يعمل مسبقاً، أوقفه
+    if(scannerObj) {
+        try { scannerObj.clear(); } catch(e){}
+        scannerObj = null;
+        document.getElementById('admin-reader').innerHTML = "";
+        document.getElementById('cashier-reader').innerHTML = "";
+    }
+
+    scannerObj = new Html5QrcodeScanner(divId, { fps: 10, qrbox: 250 });
+    scannerObj.render((decodedText) => {
+      // عند نجاح المسح
+      document.getElementById(inputId).value = decodedText;
+      
+      if(divId === 'cashier-reader') {
+        document.getElementById('scan-result').innerText = "✅ تم التقاط العميل";
+      } else {
+        Swal.fire({title: 'تم المسح', text: decodedText, icon: 'success', timer: 1000, showConfirmButton: false});
+      }
+
+      // إيقاف الكاميرا بعد المسح
+      scannerObj.clear();
+      scannerObj = null;
+      readerDiv.innerHTML = "";
+    });
+  }
+
+</script>
+</body>
+</html>
