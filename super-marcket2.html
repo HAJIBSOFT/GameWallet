@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HAJIB Pay | المحفظة</title>
+  
+  <!-- مكتبات خارجية -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- خطوط وأيقونات -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card-grad: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%); /* لون جديد فخم */
+      --bg-color: #f0f2f5;
+      --surface: #ffffff;
+      --text-main: #2d3436;
+      --success: #1dd1a1;
+      --danger: #ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--bg-color);
+      background-image: radial-gradient(#d1d8e0 1px, transparent 1px);
+      background-size: 20px 20px;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* محاكات شاشة الجوال */
+    .mobile-frame {
+      width: 100%;
+      max-width: 400px;
+      min-height: 100vh;
+      background: var(--surface);
+      box-shadow: 0 0 50px rgba(0,0,0,0.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    @media (min-width: 450px) {
+      .mobile-frame {
+        min-height: 85vh;
+        height: auto;
+        border-radius: 30px;
+        margin: 20px;
+        border: 8px solid #fff;
+      }
+    }
+
+    /* الهيدر */
+    .app-header {
+      padding: 30px 20px 10px;
+      text-align: center;
+    }
+    .logo-icon {
+      font-size: 2.5rem;
+      background: var(--primary-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .app-title {
+      font-weight: 900; font-size: 1.4rem; margin-top: 5px; color: #2d3436;
+    }
+
+    /* الشاشات */
+    .screen {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .hidden { display: none !important; }
+
+    /* المدخلات والأزرار */
+    .input-group { position: relative; margin-bottom: 15px; width: 100%; }
+    input, select {
+      width: 100%; padding: 16px; padding-right: 45px;
+      border: 1px solid #e1e1e1; border-radius: 15px; background: #f9f9f9;
+      font-family: 'Cairo', sans-serif; box-sizing: border-box; font-size: 0.95rem;
+    }
+    input:focus { outline: none; background: #fff; border-color: #667eea; }
+    .input-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #a4b0be; }
+
+    button {
+      width: 100%; padding: 15px; border: none; border-radius: 15px;
+      background: var(--primary-grad); color: white; font-weight: 700; cursor: pointer;
+      font-family: 'Cairo', sans-serif; margin-top: 10px; transition: 0.3s;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-secondary { background: #dfe6e9; color: #2d3436; }
+    .btn-danger { background: linear-gradient(135deg, #ff7675 0%, #d63031 100%); }
+    .btn-scan { width: auto !important; padding: 10px 15px; position: absolute; left: 5px; top: 5px; bottom: 5px; background: #2d3436; margin: 0; z-index: 2; }
+
+    /* --- تصميم البطاقة الجديد --- */
+    .credit-card {
+      background: var(--card-grad);
+      border-radius: 20px;
+      padding: 20px 25px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(44, 62, 80, 0.4);
+      margin-bottom: 25px;
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .credit-card::before {
+      content: ''; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px;
+      background: rgba(255,255,255,0.05); border-radius: 50%;
+    }
+    
+    .card-top { display: flex; justify-content: space-between; align-items: center; z-index: 1; }
+    .chip {
+      width: 40px; height: 30px;
+      background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+      border-radius: 6px;
+    }
+    .card-brand { font-size: 1rem; font-weight: bold; opacity: 0.9; letter-spacing: 1px; }
+
+    /* منطقة الوسط: الرصيد يمين والباركود يسار */
+    .card-middle {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 15px 0; z-index: 1;
+    }
+    .balance-section { text-align: right; }
+    .balance-label { font-size: 0.8rem; opacity: 0.8; margin-bottom: 2px; }
+    .balance-val { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .currency { font-size: 0.9rem; font-weight: 400; }
+
+    /* مربع الباركود داخل البطاقة */
+    #card-qrcode {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 5px;
+      border-radius: 10px;
+      width: 75px; height: 75px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    #card-qrcode img { width: 100%; height: 100%; }
+
+    .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; z-index: 1; }
+    .card-holder { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+    .card-exp { font-size: 0.75rem; opacity: 0.7; }
+
+    /* السجل */
+    .history-list { background: white; border-radius: 20px; padding: 10px; }
+    .history-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f1f2f6; }
+    .history-item:last-child { border-bottom: none; }
+    .icon-box {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-left: 15px;
+    }
+    .icon-dep { background: rgba(29, 209, 161, 0.15); color: var(--success); }
+    .icon-with { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
+    
+    .txn-details { flex: 1; }
+    .txn-amount { font-weight: 700; }
+    .plus { color: var(--success); } .minus { color: var(--danger); }
+
+    /* التبويبات والكاميرا */
+    .tabs-container { background: #f1f2f6; padding: 5px; border-radius: 12px; display: flex; margin-bottom: 20px; }
+    .tab-btn { flex: 1; background: transparent; color: #636e72; padding: 10px; margin: 0; border-radius: 10px; box-shadow: none; }
+    .tab-btn.active { background: white; color: var(--text-main); }
+    
+    #cashier-reader, #admin-reader { border-radius: 15px; overflow: hidden; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+
+<div class="mobile-frame">
+  <header class="app-header">
+    <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+    <div class="app-title">HAJIB PAY</div>
+  </header>
+
+  <!-- ================= تسجيل الدخول ================= -->
+  <div id="login-screen" class="screen">
+    <div style="text-align: center; margin: 20px 0 40px;">
+      <h2>مرحباً بك 👋</h2>
+      <p style="color: #636e72;">سجل الدخول لمحفظتك الرقمية</p>
+    </div>
+    <div class="input-group">
+      <i class="fa-regular fa-envelope input-icon"></i>
+      <input type="email" id="login-email" placeholder="البريد الإلكتروني">
+    </div>
+    <div class="input-group">
+      <i class="fa-solid fa-lock input-icon"></i>
+      <input type="password" id="login-pass" placeholder="كلمة المرور">
+    </div>
+    <button onclick="handleLogin()">دخول آمن <i class="fa-solid fa-arrow-left" style="margin-right:8px"></i></button>
+  </div>
+
+  <!-- ================= واجهة العميل (المحفظة) ================= -->
+  <div id="user-screen" class="screen hidden">
+    
+    <!-- البطاقة البنكية الجديدة -->
+    <div class="credit-card">
+      <div class="card-top">
+        <div class="chip"></div>
+        <div class="card-brand">HAJIB Pay</div>
+      </div>
+
+      <div class="card-middle">
+        <!-- الرصيد يمين -->
+        <div class="balance-section">
+           <div class="balance-label">الرصيد المتاح</div>
+           <div class="balance-val"><span id="user-balance-disp">--</span> <span class="currency">SAR</span></div>
+        </div>
+        <!-- الباركود يسار -->
+        <div id="card-qrcode"></div>
+      </div>
+
+      <div class="card-bottom">
+        <div class="card-holder" id="user-id-disp">اسم العميل</div>
+        <div class="card-exp">MEMBER CARD</div>
+      </div>
+    </div>
+
+    <!-- السجل -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3 style="margin:0; font-size:1rem;">آخر العمليات</h3>
+      <span style="font-size:0.8rem; color: #667eea;">عرض الكل</span>
+    </div>
+    
+    <div class="history-list" id="user-history" style="max-height: 250px; overflow-y: auto;"></div>
+
+    <div style="margin-top: auto; padding-top:20px;">
+        <button class="btn-secondary" onclick="loadUserDashboard()"><i class="fa-solid fa-rotate"></i> تحديث</button>
+        <button class="btn-danger" onclick="logout()" style="margin-top:10px;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+    </div>
+  </div>
+
+  <!-- ================= واجهة الإدارة ================= -->
+  <div id="admin-screen" class="screen hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>لوحة التحكم</h2>
+        <span style="font-size:0.8rem; background:#dff9fb; padding:5px 10px; border-radius:10px;">Admin</span>
+    </div>
+    <div class="tabs-container">
+      <button class="tab-btn active" onclick="showAdminTab('tab-topup')">شحن</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-users')">إضافة</button>
+      <button class="tab-btn" onclick="showAdminTab('tab-reports')">تقارير</button>
+    </div>
+
+    <!-- تبويب الشحن -->
+    <div id="tab-topup">
+      <div id="admin-reader" class="hidden"></div>
+      <div class="input-group" style="display:flex;">
+        <input type="email" id="admin-topup-email" placeholder="امسح الباركود أو اكتب الايميل" style="padding-left:60px;">
+        <button class="btn-scan" onclick="startScanner('admin-topup-email', 'admin-reader')"><i class="fa-solid fa-camera"></i></button>
+      </div>
+      <div class="input-group">
+          <i class="fa-solid fa-money-bill input-icon"></i>
+          <input type="number" id="admin-topup-amount" placeholder="المبلغ">
+      </div>
+      <button onclick="handleTransaction('deposit')"><i class="fa-solid fa-circle-plus"></i> إيداع</button>
+    </div>
+
+    <!-- تبويب إضافة مستخدم -->
+    <div id="tab-users" class="hidden">
+      <div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="new-email" placeholder="البريد الإلكتروني"></div>
+      <div class="input-group"><i class="fa-solid fa-key input-icon"></i><input type="password" id="new-pass" placeholder="كلمة المرور"></div>
+      <div class="input-group"><i class="fa-solid fa-user input-icon"></i><input type="text" id="new-name" placeholder="الاسم الكامل"></div>
+      <select id="new-role">
+        <option value="user">عميل (User)</option>
+        <option value="operator">كاشير (Cashier)</option>
+        <option value="admin">مدير (Admin)</option>
+      </select>
+      <button onclick="createNewUser()"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</button>
+    </div>
+
+    <!-- تبويب التقارير -->
+    <div id="tab-reports" class="hidden">
+      <input type="date" id="report-start">
+      <input type="date" id="report-end" style="margin-top:5px;">
+      <button onclick="generateReport()" class="btn-secondary">استخراج التقرير</button>
+      <div id="report-output" class="hidden" style="margin-top:15px; background:white; padding:15px; border-radius:15px;">
+        <div style="display:flex; justify-content:space-between;"><span>الإيداعات:</span><span id="rep-deposit" style="color:var(--success); font-weight:bold;">0</span></div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;"><span>المبيعات:</span><span id="rep-spent" style="color:var(--danger); font-weight:bold;">0</span></div>
+      </div>
+    </div>
+
+    <button class="btn-danger" style="margin-top:auto" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- ================= واجهة الكاشير ================= -->
+  <div id="operator-screen" class="screen hidden">
+    <h2><i class="fa-solid fa-cash-register"></i> نقطة بيع (POS)</h2>
+    <div id="cashier-reader" style="border: 2px dashed #a4b0be; background:#f1f2f6; height:200px; display:flex; align-items:center; justify-content:center;">
+        <span style="color:#b2bec3">الكاميرا متوقفة</span>
+    </div>
+    <div id="scan-result" style="text-align:center; color: var(--success); font-weight:bold; height:25px;"></div>
+    <div class="input-group" style="display:flex;">
+        <input type="email" id="op-user-email" placeholder="معرف العميل" style="padding-left:60px;">
+        <button class="btn-scan" onclick="startScanner('op-user-email', 'cashier-reader')"><i class="fa-solid fa-camera"></i></button>
+    </div>
+    <div class="input-group">
+        <i class="fa-solid fa-coins input-icon"></i>
+        <input type="number" id="op-amount" placeholder="قيمة المشتريات" style="font-size:1.1rem; font-weight:bold;">
+    </div>
+    <button onclick="handleTransaction('withdraw')" style="background: #2d3436;"><i class="fa-solid fa-check"></i> دفع</button>
+    <button class="btn-danger" onclick="logout()">خروج</button>
+  </div>
+</div>
+
+<script>
+  /* ==================================================== */
+  /* استبدل الرابط أدناه برابط الـ Web App الخاص بك */
+  const API_URL = "https://script.google.com/macros/s/AKfycbx9KgDHz_OJfQT-gBs3kjluyOc_ACMmoPfg9Af7VsEClYTb43wPMIDGBEgPKZdMvLEuPw/exec"; 
+  /* ==================================================== */
+
+  let currentUser = {};
+  let scannerObj = null; 
+
+  async function apiCall(data) {
+    try {
+      const response = await fetch(API_URL, { method: "POST", body: JSON.stringify(data) });
+      return await response.json();
+    } catch (error) {
+      Swal.fire({icon: 'error', title: 'خطأ اتصال', text: 'تأكد من الانترنت'});
+      return { success: false };
+    }
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    if (!email || !pass) return Swal.fire({icon:'warning', title:'تنبيه', text:'أدخل البيانات'});
+    
+    Swal.fire({title: 'جاري التحقق...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    const res = await apiCall({ action: 'login', email: email, password: pass });
+    Swal.close();
+
+    if (res.success) {
+      currentUser = res;
+      document.getElementById('login-screen').classList.add('hidden');
+      if (res.role === 'admin') document.getElementById('admin-screen').classList.remove('hidden');
+      else if (res.role === 'operator') {
+         document.getElementById('operator-screen').classList.remove('hidden');
+         startScanner('op-user-email', 'cashier-reader'); 
+      }
+      else { 
+        document.getElementById('user-screen').classList.remove('hidden'); 
+        loadUserDashboard(); 
+      }
+    } else {
+      Swal.fire({icon: 'error', title: 'خطأ', text: 'بيانات الدخول غير صحيحة'});
+    }
+  }
+
+  function logout() { location.reload(); }
+
+  async function loadUserDashboard() {
+    document.getElementById('user-id-disp').innerText = currentUser.name;
+    
+    // توليد الباركود الصغير داخل البطاقة
+    document.getElementById('card-qrcode').innerHTML = "";
+    new QRCode(document.getElementById("card-qrcode"), { 
+        text: currentUser.email, 
+        width: 65, 
+        height: 65, 
+        colorDark : "#000000", 
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L
+    });
+    
+    const bal = await apiCall({ action: 'getUserDetails', email: currentUser.email });
+    if(bal.success) document.getElementById('user-balance-disp').innerText = bal.balance;
+
+    const hist = await apiCall({ action: 'getUserHistory', email: currentUser.email });
+    const list = document.getElementById('user-history');
+    list.innerHTML = "";
+    
+    if(!hist.history || hist.history.length === 0) list.innerHTML = "<div style='text-align:center; padding:20px; color:#b2bec3'>لا توجد عمليات سابقة</div>";
+
+    (hist.history || []).reverse().forEach(item => {
+      const isDep = item.type === "شحن رصيد";
+      const icon = isDep ? '<i class="fa-solid fa-arrow-down"></i>' : '<i class="fa-solid fa-cart-shopping"></i>';
+      const cssClass = isDep ? 'icon-dep' : 'icon-with';
+      const amountClass = isDep ? 'plus' : 'minus';
+      const sign = isDep ? '+' : '-';
+      
+      list.innerHTML += `
+        <div class="history-item">
+          <div class="icon-box ${cssClass}">${icon}</div>
+          <div class="txn-details" style="margin-right:15px;">
+             <div style="font-weight:bold; font-size:0.9rem;">${isDep ? 'إيداع رصيد' : 'مشتريات'}</div>
+             <div style="font-size:0.75rem; color:#b2bec3;">${item.date}</div>
+          </div>
+          <div class="txn-amount ${amountClass}">${sign}${item.amount}</div>
+        </div>`;
+    });
+  }
+
+  function showAdminTab(id) {
+    ['tab-topup', 'tab-users', 'tab-reports'].forEach(t => document.getElementById(t).classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if(scannerObj) { scannerObj.clear(); scannerObj = null; document.getElementById('admin-reader').innerHTML = ""; }
+  }
+
+  async function handleTransaction(type) {
+    let emailId = type === 'deposit' ? 'admin-topup-email' : 'op-user-email';
+    let amountId = type === 'deposit' ? 'admin-topup-amount' : 'op-amount';
+    const email = document.getElementById(emailId).value;
+    const amount = document.getElementById(amountId).value;
+
+    if(!email || !amount) return Swal.fire({icon:'warning', text:'تأكد من البيانات'});
+
+    Swal.fire({title: 'جاري التنفيذ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    const res = await apiCall({ action: 'transaction', userEmail: email, amount, type, operatorEmail: currentUser.email });
+    Swal.close();
+
+    if(res.success) {
+      Swal.fire({icon:'success', title:'نجاح', text: res.message});
+      document.getElementById(amountId).value = ""; 
+      document.getElementById(emailId).value = ""; 
+      document.getElementById('scan-result').innerText = "";
+      if(type === 'withdraw' && !scannerObj) startScanner('op-user-email', 'cashier-reader');
+    } else {
+      Swal.fire({icon:'error', title:'فشل', text: res.message});
+    }
+  }
+
+  async function createNewUser() {
+    const data = {
+      action: 'createNewUser',
+      email: document.getElementById('new-email').value,
+      password: document.getElementById('new-pass').value,
+      name: document.getElementById('new-name').value,
+      role: document.getElementById('new-role').value
+    };
+    if(!data.email || !data.password) return;
+    Swal.showLoading();
+    const res = await apiCall(data);
+    Swal.close();
+    if(res.success) { Swal.fire('تم', 'تم تسجيل العميل', 'success'); document.getElementById('new-email').value=""; }
+  }
+
+  async function generateReport() {
+    const s = document.getElementById('report-start').value;
+    const e = document.getElementById('report-end').value;
+    if(!s || !e) return;
+    Swal.showLoading();
+    const res = await apiCall({ action: 'getAdminReport', startDate: s, endDate: e });
+    Swal.close();
+    if(res.success) {
+      document.getElementById('report-output').classList.remove('hidden');
+      document.getElementById('rep-deposit').innerText = res.deposit + ' SAR';
+      document.getElementById('rep-spent').innerText = res.spent + ' SAR';
+    }
+  }
+
+  function startScanner(inputId, divId) {
+    const readerDiv = document.getElementById(divId);
+    readerDiv.classList.remove('hidden');
+    if(scannerObj) { try { scannerObj.clear(); } catch(e){} scannerObj = null; document.getElementById(divId).innerHTML = ""; }
+    scannerObj = new Html5QrcodeScanner(divId, { fps: 10, qrbox: 250 });
+    scannerObj.render((decodedText) => {
+      document.getElementById(inputId).value = decodedText;
+      if(divId === 'cashier-reader') document.getElementById('scan-result').innerText = "✅ تم التقاط العميل";
+      else Swal.fire({title: 'تم المسح', text: decodedText, icon: 'success', timer: 1000, showConfirmButton: false});
+      scannerObj.clear(); scannerObj = null; readerDiv.innerHTML = "";
+    });
+  }
+</script>
+</body>
+</html>
